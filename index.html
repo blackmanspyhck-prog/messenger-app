@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Messenger</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',Tahoma,sans-serif; }
+
+    body {
+      background: linear-gradient(135deg,#667eea,#764ba2);
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+    }
+
+    .auth-box {
+      background:#fff; padding:32px 28px; border-radius:16px;
+      width:100%; max-width:380px; box-shadow:0 10px 40px rgba(0,0,0,0.2);
+    }
+    .auth-box h1 { text-align:center; margin-bottom:8px; color:#333; }
+    .auth-box .sub { text-align:center; color:#888; font-size:14px; margin-bottom:22px; }
+    .auth-box button.main-btn {
+      width:100%; padding:14px; background:#667eea; color:#fff;
+      border:none; border-radius:10px; font-size:16px; font-weight:600;
+      cursor:pointer; margin-bottom:12px;
+    }
+    .auth-box button.main-btn:hover { background:#5568d3; }
+    .auth-box button.sec-btn {
+      width:100%; padding:14px; background:#fff; color:#667eea;
+      border:2px solid #667eea; border-radius:10px; font-size:16px;
+      font-weight:600; cursor:pointer;
+    }
+    .auth-box button.sec-btn:hover { background:#f0f2ff; }
+    .auth-box input {
+      width:100%; padding:12px 14px; margin-bottom:12px;
+      border:1px solid #ddd; border-radius:8px; font-size:15px; outline:none;
+    }
+    .auth-box input:focus { border-color:#667eea; }
+    .error { color:#e74c3c; font-size:14px; text-align:center; margin-top:12px; min-height:18px; }
+    .back-link { display:block; text-align:center; margin-top:14px; font-size:14px; color:#667eea; cursor:pointer; text-decoration:none; }
+
+    .result-box {
+      background:#f7f8ff; border:1px dashed #667eea; border-radius:10px;
+      padding:16px; margin-top:16px; text-align:center;
+    }
+    .result-box .label { font-size:13px; color:#888; margin-bottom:4px; }
+    .result-box .value {
+      font-size:20px; font-weight:700; color:#667eea;
+      letter-spacing:1px; user-select:all;
+    }
+    .result-box .warn { font-size:12px; color:#e67e22; margin-top:10px; }
+    .copy-btn {
+      margin-top:10px; padding:8px 16px; background:#667eea; color:#fff;
+      border:none; border-radius:8px; font-size:13px; cursor:pointer;
+    }
+
+    #appScreen {
+      display:none;
+      background:#f0f2f5;
+      width:100%;
+      max-width:480px;
+      height:90vh;
+      border-radius:16px;
+      overflow:hidden;
+      box-shadow:0 10px 40px rgba(0,0,0,0.2);
+      flex-direction:column;
+    }
+    .app-header {
+      background:#667eea; color:#fff; padding:16px 20px;
+      display:flex; justify-content:space-between; align-items:center;
+      flex-shrink:0;
+    }
+    .app-header h1 { font-size:16px; }
+    .app-header button {
+      background:rgba(255,255,255,0.2); color:#fff; border:none;
+      padding:8px 14px; border-radius:8px; cursor:pointer; font-size:14px;
+    }
+
+    #homeView { display:flex; flex-direction:column; flex:1; overflow:hidden; }
+    .search-box { padding:16px 20px; flex-shrink:0; }
+    .search-box input {
+      width:100%; padding:12px 16px; border:none; border-radius:24px;
+      font-size:15px; outline:none; box-shadow:0 2px 8px rgba(0,0,0,0.08);
+    }
+    .user-list { padding:0 20px 20px; overflow-y:auto; flex:1; }
+    .user-item {
+      background:#fff; padding:14px 16px; border-radius:12px;
+      margin-bottom:10px; cursor:pointer; display:flex; align-items:center;
+      gap:12px; box-shadow:0 1px 4px rgba(0,0,0,0.06);
+    }
+    .user-item:hover { background:#f7f8ff; }
+    .avatar {
+      width:42px; height:42px; border-radius:50%; background:#667eea;
+      color:#fff; display:flex; align-items:center; justify-content:center;
+      font-weight:700; font-size:18px; text-transform:uppercase; flex-shrink:0;
+    }
+    .user-info .uname { font-weight:600; color:#333; }
+    .user-info .uid { font-size:13px; color:#888; }
+    .empty { text-align:center; color:#999; padding:30px 0; font-size:14px; }
+
+    #chatView { display:none; flex-direction:column; flex:1; overflow:hidden; }
+    .chat-header {
+      background:#667eea; color:#fff; padding:14px 18px;
+      display:flex; align-items:center; gap:12px; flex-shrink:0;
+    }
+    .chat-header .back { background:none; border:none; color:#fff; font-size:22px; cursor:pointer; }
+    .chat-header h2 { font-size:16px; }
+    .messages {
+      flex:1; overflow-y:auto; padding:16px;
+      display:flex; flex-direction:column; gap:8px;
+      background:#e5ddd5;
+    }
+    .msg {
+      max-width:75%; padding:10px 14px; border-radius:14px;
+      font-size:15px; word-wrap:break-word;
+    }
+    .msg.me { align-self:flex-end; background:#dcf8c6; border-bottom-right-radius:4px; }
+    .msg.them { align-self:flex-start; background:#fff; border-bottom-left-radius:4px; }
+    .input-area { display:flex; gap:8px; padding:12px; background:#f0f0f0; flex-shrink:0; }
+    .input-area input {
+      flex:1; padding:12px 16px; border:none; border-radius:24px;
+      font-size:15px; outline:none;
+    }
+    .input-area button {
+      padding:0 22px; background:#667eea; color:#fff; border:none;
+      border-radius:24px; font-size:15px; font-weight:600; cursor:pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="auth-box" id="authScreen">
+    <h1>💬 Messenger</h1>
+    <p class="sub" id="authSub">শুরু করুন</p>
+
+    <div id="startOptions">
+      <button class="main-btn" id="createAccountBtn">Create Account</button>
+      <button class="sec-btn" id="showLoginBtn">Log in with existing UserID</button>
+      <p class="error" id="startError"></p>
+    </div>
+
+    <div id="createResult" style="display:none;">
+      <div class="result-box">
+        <div class="label">আপনার Username</div>
+        <div class="value" id="genName">—</div>
+        <div class="label" style="margin-top:14px;">আপনার User ID</div>
+        <div class="value" id="genUserId">—</div>
+        <p class="warn">⚠️ এই User ID লিখে রাখুন। এটি দিয়ে আবার লগইন করবেন।</p>
+        <button class="copy-btn" id="copyBtn">কপি করুন</button>
+      </div>
+      <button class="main-btn" style="margin-top:16px;" id="goChatBtn">চ্যাটে যান</button>
+    </div>
+
+    <div id="loginForm" style="display:none;">
+      <input type="text" id="loginUserId" placeholder="আপনার User ID লিখুন">
+      <button class="main-btn" id="loginBtn">লগইন</button>
+      <a class="back-link" id="backToStart">← ফিরে যান</a>
+      <p class="error" id="loginError"></p>
+    </div>
+  </div>
+
+  <div id="appScreen">
+    <div class="app-header">
+      <h1 id="meHeader">💬 Messenger</h1>
+      <button id="logoutBtn">লগআউট</button>
+    </div>
+
+    <div id="homeView">
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="Username দিয়ে সার্চ করুন...">
+      </div>
+      <div class="user-list" id="userList">
+        <p class="empty">সার্চ করে ইউজার খুঁজুন</p>
+      </div>
+    </div>
+
+    <div id="chatView">
+      <div class="chat-header">
+        <button class="back" id="backBtn">←</button>
+        <h2 id="chatName">চ্যাট</h2>
+      </div>
+      <div class="messages" id="messages"></div>
+      <div class="input-area">
+        <input type="text" id="msgInput" placeholder="মেসেজ লিখুন..." autocomplete="off">
+        <button id="sendBtn">পাঠান</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import {
+      getFirestore, doc, setDoc, getDoc, collection, addDoc,
+      query, orderBy, startAt, endAt, getDocs, limit,
+      onSnapshot, serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getMessaging, getToken } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAY8QCUw8Qmmt56qKPDCqQGpcud9qex_UM",
+      authDomain: "new-app-2099b.firebaseapp.com",
+      projectId: "new-app-2099b",
+      storageBucket: "new-app-2099b.firebasestorage.app",
+      messagingSenderId: "869110998949",
+      appId: "1:869110998949:web:a09e4e9410dbd02df5ea4c",
+      measurementId: "G-7VQTJHF342"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    
+    const messaging = getMessaging(app);
+    const VAPID_KEY = "BFWdloECbK9qJbwGtbhcsiCZkmP_X1Z2MNbjzTS9lSh1wVmwHSegC_B7rWImzCNhSkMuYCpg1tSrXSWOlsLGU6Y";
+
+    const authScreen = document.getElementById("authScreen");
+    const appScreen = document.getElementById("appScreen");
+    const startOptions = document.getElementById("startOptions");
+    const createResult = document.getElementById("createResult");
+    const loginForm = document.getElementById("loginForm");
+    const authSub = document.getElementById("authSub");
+
+    const genNameEl = document.getElementById("genName");
+    const genUserIdEl = document.getElementById("genUserId");
+
+    const userList = document.getElementById("userList");
+    const searchInput = document.getElementById("searchInput");
+    const homeView = document.getElementById("homeView");
+    const chatView = document.getElementById("chatView");
+    const messagesBox = document.getElementById("messages");
+    const chatNameEl = document.getElementById("chatName");
+    const msgInput = document.getElementById("msgInput");
+    const meHeader = document.getElementById("meHeader");
+
+    let currentUid = null;
+    let currentUserData = null;
+    let otherUid = null;
+    let unsubMessages = null;
+
+    const getChatId = (a, b) => [a, b].sort().join("_");
+
+    const adjectives = ["Bright","Swift","Cool","Happy","Bold","Calm","Sharp","Kind","Wild","Neon","Silent","Lucky","Cosmic","Golden","Silver"];
+    const nouns = ["Tiger","Falcon","River","Moon","Star","Panda","Fox","Wolf","Eagle","Cloud","Storm","Lion","Hawk","Bear","Dragon"];
+
+    function randomName() {
+      const a = adjectives[Math.floor(Math.random()*adjectives.length)];
+      const n = nouns[Math.floor(Math.random()*nouns.length)];
+      const num = Math.floor(Math.random()*9000)+1000;
+      return `${a}${n}${num}`;
+    }
+
+    function randomUserId() {
+      const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+      let id = "";
+      for (let i=0;i<8;i++) id += chars[Math.floor(Math.random()*chars.length)];
+      return id;
+    }
+
+    async function uniqueUserId() {
+      for (let i=0;i<10;i++) {
+        const id = randomUserId();
+        const snap = await getDoc(doc(db, "userIds", id));
+        if (!snap.exists()) return id;
+      }
+      throw new Error("ইউনিক ID তৈরি করা যায়নি, আবার চেষ্টা করুন");
+    }
+
+    function showStart() {
+      startOptions.style.display = "block";
+      createResult.style.display = "none";
+      loginForm.style.display = "none";
+      authSub.textContent = "শুরু করুন";
+    }
+    function showLogin() {
+      startOptions.style.display = "none";
+      createResult.style.display = "none";
+      loginForm.style.display = "block";
+      authSub.textContent = "লগইন করুন";
+    }
+    function showResult() {
+      startOptions.style.display = "none";
+      loginForm.style.display = "none";
+      createResult.style.display = "block";
+      authSub.textContent = "অ্যাকাউন্ট তৈরি হয়েছে ✅";
+    }
+
+    document.getElementById("showLoginBtn").onclick = showLogin;
+    document.getElementById("backToStart").onclick = showStart;
+
+    document.getElementById("createAccountBtn").onclick = async () => {
+      const btn = document.getElementById("createAccountBtn");
+      btn.disabled = true;
+      btn.textContent = "তৈরি হচ্ছে...";
+      try {
+        const userId = await uniqueUserId();
+        const name = randomName();
+        const uid = "u_" + userId;
+
+        await setDoc(doc(db, "users", uid), {
+          name: name,
+          nameSearch: name.toLowerCase(),
+          userId: userId,
+          fcmToken: "",
+          createdAt: serverTimestamp()
+        });
+        await setDoc(doc(db, "userIds", userId), { uid: uid });
+
+        localStorage.setItem("messenger_uid", uid);
+        localStorage.setItem("messenger_userId", userId);
+
+        genNameEl.textContent = name;
+        genUserIdEl.textContent = userId;
+        showResult();
+      } catch (err) {
+        document.getElementById("startError").textContent = err.message;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Create Account";
+      }
+    };
+
+    document.getElementById("copyBtn").onclick = () => {
+      const text = `Username: ${genNameEl.textContent}\nUser ID: ${genUserIdEl.textContent}`;
+      navigator.clipboard.writeText(text);
+      document.getElementById("copyBtn").textContent = "কপি হয়েছে ✅";
+      setTimeout(()=>document.getElementById("copyBtn").textContent="কপি করুন", 1500);
+    };
+
+    document.getElementById("goChatBtn").onclick = () => {
+      enterApp(localStorage.getItem("messenger_uid"));
+    };
+
+    document.getElementById("loginBtn").onclick = async () => {
+      const userId = document.getElementById("loginUserId").value.trim().toLowerCase();
+      const loginError = document.getElementById("loginError");
+      loginError.textContent = "";
+      if (!userId) return loginError.textContent = "User ID লিখুন";
+
+      try {
+        const idSnap = await getDoc(doc(db, "userIds", userId));
+        if (!idSnap.exists()) return loginError.textContent = "এই User ID পাওয়া যায়নি";
+
+        const uid = idSnap.data().uid;
+        localStorage.setItem("messenger_uid", uid);
+        localStorage.setItem("messenger_userId", userId);
+        enterApp(uid);
+      } catch (err) {
+        loginError.textContent = err.message;
+      }
+    };
+
+    document.getElementById("logoutBtn").onclick = () => {
+      if (unsubMessages) unsubMessages();
+      localStorage.removeItem("messenger_uid");
+      localStorage.removeItem("messenger_userId");
+      currentUid = null;
+      currentUserData = null;
+      appScreen.style.display = "none";
+      authScreen.style.display = "block";
+      showStart();
+    };
+
+    async function enterApp(uid) {
+      try {
+        const snap = await getDoc(doc(db, "users", uid));
+        if (!snap.exists()) {
+          localStorage.removeItem("messenger_uid");
+          return;
+        }
+        currentUid = uid;
+        currentUserData = snap.data();
+        meHeader.textContent = `💬 ${currentUserData.name}`;
+        authScreen.style.display = "none";
+        appScreen.style.display = "flex";
+        showHome();
+
+        // --- নোটিফিকেশন টোকেন নেওয়া ---
+        try {
+          const permission = await Notification.requestPermission();
+          if (permission === 'granted') {
+            const token = await getToken(messaging, { vapidKey: VAPID_KEY });
+            if (token) {
+              await setDoc(doc(db, "users", uid), { fcmToken: token }, { merge: true });
+              console.log("FCM Token saved successfully!", token);
+            }
+          }
+        } catch (err) {
+          console.error("Notification error:", err);
+        }
+
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    (async function autoLogin() {
+      const uid = localStorage.getItem("messenger_uid");
+      if (uid) await enterApp(uid);
+      else showStart();
+    })();
+
+    function showHome() {
+      homeView.style.display = "flex";
+      chatView.style.display = "none";
+      searchInput.value = "";
+      userList.innerHTML = '<p class="empty">সার্চ করে ইউজার খুঁজুন</p>';
+      if (unsubMessages) { unsubMessages(); unsubMessages = null; }
+    }
+    document.getElementById("backBtn").onclick = showHome;
+
+    let debounce;
+    searchInput.addEventListener("input", () => {
+      clearTimeout(debounce);
+      debounce = setTimeout(doSearch, 300);
+    });
+
+    async function doSearch() {
+      const term = searchInput.value.trim().toLowerCase();
+      userList.innerHTML = "";
+      if (!term) {
+        userList.innerHTML = '<p class="empty">সার্চ করে ইউজার খুঁজুন</p>';
+        return;
+      }
+      try {
+        const q = query(
+          collection(db, "users"),
+          orderBy("nameSearch"),
+          startAt(term),
+          endAt(term + "\uf8ff"),
+          limit(20)
+        );
+        const snap = await getDocs(q);
+        let count = 0;
+        snap.forEach((d) => {
+          if (d.id === currentUid) return;
+          const u = d.data();
+          count++;
+          const div = document.createElement("div");
+          div.className = "user-item";
+          div.innerHTML = `
+            <div class="avatar">${u.name.charAt(0)}</div>
+            <div class="user-info">
+              <div class="uname">${u.name}</div>
+              <div class="uid">@${u.userId}</div>
+            </div>`;
+          div.onclick = () => openChat(d.id, u.name);
+          userList.appendChild(div);
+        });
+        if (count === 0) userList.innerHTML = '<p class="empty">কোনো ইউজার পাওয়া যায়নি</p>';
+      } catch (err) {
+        userList.innerHTML = `<p class="empty">সার্চ এরর: ${err.message}</p>`;
+      }
+    }
+
+    function openChat(uid, name) {
+      otherUid = uid;
+      chatNameEl.textContent = name;
+      homeView.style.display = "none";
+      chatView.style.display = "flex";
+      loadMessages();
+    }
+
+    function loadMessages() {
+      if (unsubMessages) unsubMessages();
+      messagesBox.innerHTML = "";
+      const chatId = getChatId(currentUid, otherUid);
+      const q = query(
+        collection(db, "chats", chatId, "messages"),
+        orderBy("createdAt")
+      );
+      unsubMessages = onSnapshot(q, (snap) => {
+        messagesBox.innerHTML = "";
+        snap.forEach((d) => {
+          const m = d.data();
+          const div = document.createElement("div");
+          div.className = "msg " + (m.senderId === currentUid ? "me" : "them");
+          div.textContent = m.text;
+          messagesBox.appendChild(div);
+        });
+        messagesBox.scrollTop = messagesBox.scrollHeight;
+      });
+    }
+
+    document.getElementById("sendBtn").onclick = sendMessage;
+    msgInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") sendMessage();
+    });
+
+    async function sendMessage() {
+      const text = msgInput.value.trim();
+      if (!text || !currentUid || !otherUid) return;
+      msgInput.value = "";
+      const chatId = getChatId(currentUid, otherUid);
+      
+      // এখানে notificationSent: false যোগ করা হয়েছে
+      await addDoc(collection(db, "chats", chatId, "messages"), {
+        senderId: currentUid,
+        receiverId: otherUid,
+        text: text,
+        notificationSent: false, 
+        createdAt: serverTimestamp()
+      });
+    }
+  </script>
+</body>
+</html>
